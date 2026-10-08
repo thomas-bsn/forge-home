@@ -17,7 +17,7 @@ export function initialForm(config) {
     title: config?.title ?? '',
     layout: config?.layout ?? 'cards',
     favicon: { preview: config?.favicon ?? null, change: undefined },
-    apps: (config?.apps ?? []).map((a) => ({ ...a, key: newKey() })),
+    apps: (config?.apps ?? []).map((a) => ({ ...a, checkUrl: a.checkUrl ?? '', key: newKey() })),
     auth: {
       mode: config?.auth?.mode ?? 'none',
       password: '',
@@ -52,7 +52,7 @@ export function toPayload(form) {
     title: form.title,
     layout: form.layout,
     ...(form.favicon.change !== undefined && { favicon: form.favicon.change }),
-    apps: form.apps.map(({ name, url, category }) => ({ name, url, category })),
+    apps: form.apps.map(({ name, url, category, checkUrl }) => ({ name, url, category, checkUrl })),
     auth: {
       mode: auth.mode,
       ...(auth.mode === 'password' && { password: auth.password }),
@@ -180,22 +180,22 @@ export function AppsSection({ form, setForm }) {
       <div className="apps-editor">
         {form.apps.map((app, i) => (
           <div key={app.key} className="app-row">
-            <input value={app.name} onChange={(e) => update(app.key, 'name', e.target.value)} placeholder="Nom (ex. Jellyfin)" aria-label="Nom" maxLength={80} />
-            <input
-              value={app.url}
-              onChange={(e) => update(app.key, 'url', e.target.value)}
-              placeholder="URL (ex. http://192.168.1.10:8096)"
-              aria-label="URL"
-              inputMode="url"
-            />
-            <input
-              value={app.category}
-              onChange={(e) => update(app.key, 'category', e.target.value)}
-              placeholder="Catégorie (facultatif)"
-              aria-label="Catégorie"
-              list="categories"
-              maxLength={40}
-            />
+            <label className="app-field f-name">
+              <span>Nom</span>
+              <input value={app.name} onChange={(e) => update(app.key, 'name', e.target.value)} placeholder="ex. Jellyfin" maxLength={80} />
+            </label>
+            <label className="app-field f-url">
+              <span>URL (ouverte au clic)</span>
+              <input value={app.url} onChange={(e) => update(app.key, 'url', e.target.value)} placeholder="ex. https://jellyfin.mondomaine.fr" inputMode="url" />
+            </label>
+            <label className="app-field f-cat">
+              <span>Catégorie (facultatif)</span>
+              <input value={app.category} onChange={(e) => update(app.key, 'category', e.target.value)} placeholder="ex. Médias" list="categories" maxLength={40} />
+            </label>
+            <label className="app-field f-check">
+              <span>URL interne (facultatif)</span>
+              <input value={app.checkUrl} onChange={(e) => update(app.key, 'checkUrl', e.target.value)} placeholder="ex. http://jellyfin:8096" inputMode="url" />
+            </label>
             <div className="row-actions">
               <button type="button" className="icon-btn" onClick={() => move(i, -1)} disabled={i === 0} aria-label="Monter" title="Monter">
                 ↑
@@ -216,10 +216,14 @@ export function AppsSection({ form, setForm }) {
         ))}
       </datalist>
 
-      <button type="button" className="btn" onClick={() => setApps((apps) => [...apps, { key: newKey(), name: '', url: '', category: '' }])}>
+      <button type="button" className="btn" onClick={() => setApps((apps) => [...apps, { key: newKey(), name: '', url: '', category: '', checkUrl: '' }])}>
         + Ajouter une app
       </button>
-      <small className="muted">Les catégories servent à regrouper les apps dans les interfaces Lanceur, Tableau de bord et Minimal.</small>
+      <small className="muted">
+        L’<b>URL</b> est celle qu’ouvre le navigateur au clic. L’<b>URL interne</b>, facultative, sert uniquement au serveur pour vérifier le
+        statut et récupérer l’icône : par exemple un nom de conteneur (<code>http://jellyfin:8096</code>) si la homepage est sur le même réseau
+        Docker. Les catégories regroupent les apps dans les interfaces Lanceur, Tableau de bord et Minimal.
+      </small>
     </div>
   );
 }

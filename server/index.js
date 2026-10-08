@@ -24,6 +24,9 @@ const PORT = Number(process.env.PORT) || 3000;
 const HISTORY_LENGTH = 20;
 const OAUTH_COOKIE = 'hp_oauth_state';
 
+// L'URL interne d'une app (nom de conteneur, IP privée…) n'est montrée qu'à l'admin.
+const withoutCheckUrl = ({ checkUrl, ...app }) => app;
+
 // Ce que le navigateur a le droit de voir de la config (jamais les secrets).
 function publicConfig(cfg, canEdit) {
   const { auth } = cfg;
@@ -32,7 +35,7 @@ function publicConfig(cfg, canEdit) {
     title: cfg.title,
     layout: cfg.layout,
     favicon: cfg.favicon ? `/api/site-favicon?v=${cfg.favicon.hash}` : null,
-    apps: cfg.apps,
+    apps: canEdit ? cfg.apps : cfg.apps.map(withoutCheckUrl),
     auth: {
       mode: auth.mode,
       ...(auth.mode === 'discord' && { ready: Boolean(auth.ownerId) }),
@@ -168,10 +171,11 @@ app.get('/api/apps', async (req, res) => {
   const apps = cfg?.apps ?? [];
   const results = await Promise.all(
     apps.map(async (a) => {
-      const check = await checkApp(a);
+      // Le serveur vérifie l'URL interne si elle existe ; le navigateur, lui, ouvre toujours `url`.
+      const check = await checkApp({ url: a.checkUrl || a.url });
       const { checks, downSince } = record(a.url, check);
       return {
-        ...a,
+        ...withoutCheckUrl(a),
         favicon: `/api/favicon?url=${encodeURIComponent(a.url)}`,
         ...check,
         history: checks,
@@ -188,9 +192,10 @@ app.get('/api/favicon', async (req, res) => {
   const url = typeof req.query.url === 'string' ? req.query.url : '';
   // Anti-SSRF : on ne proxifie que les URLs des apps configurées.
   const cfg = await loadConfig();
-  if (!cfg?.apps.some((a) => a.url === url)) return res.sendStatus(404);
+  const target = cfg?.apps.find((a) => a.url === url);
+  if (!target) return res.sendStatus(404);
 
-  const img = await resolveFavicon(url);
+  const img = await resolveFavicon(target.checkUrl || target.url);
   if (!img) return res.set('cache-control', 'public, max-age=300').sendStatus(404);
   res
     .set('content-type', img.type)

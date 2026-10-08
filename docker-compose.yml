@@ -7,6 +7,15 @@ services:
     volumes:
       - homepage-data:/data
     restart: unless-stopped
+    # To check apps by container name (e.g. http://jellyfin:8096),
+    # join the Docker network they are on:
+    # networks:
+    #   - default
+    #   - my-network
 
 volumes:
   homepage-data:
+
+# networks:
+#   my-network:
+#     external: true

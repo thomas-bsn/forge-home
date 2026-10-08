@@ -45,22 +45,29 @@ export function parseSite(body) {
   if (!Array.isArray(body?.apps)) throw new InputError('La liste des apps est manquante');
   if (body.apps.length > MAX_APPS) throw new InputError(`${MAX_APPS} apps maximum`);
 
-  const seen = new Set();
-  const apps = body.apps.map((a, i) => {
-    const name = str(a?.name, 80);
-    const url = str(a?.url, 2000);
-    const category = str(a?.category, 40);
-    if (!name) throw new InputError(`App n°${i + 1} : le nom est obligatoire`);
+  const checkHttpUrl = (name, url, label, example) => {
     let parsed;
     try {
       parsed = new URL(url);
     } catch {
-      throw new InputError(`${name} : l’URL est invalide (exemple : http://192.168.1.10:8096)`);
+      throw new InputError(`${name} : ${label} est invalide (exemple : ${example})`);
     }
-    if (!['http:', 'https:'].includes(parsed.protocol)) throw new InputError(`${name} : l’URL doit commencer par http:// ou https://`);
+    if (!['http:', 'https:'].includes(parsed.protocol)) throw new InputError(`${name} : ${label} doit commencer par http:// ou https://`);
+  };
+
+  const seen = new Set();
+  const apps = body.apps.map((a, i) => {
+    const name = str(a?.name, 80);
+    const url = str(a?.url, 2000);
+    const checkUrl = str(a?.checkUrl, 2000);
+    const category = str(a?.category, 40);
+    if (!name) throw new InputError(`App n°${i + 1} : le nom est obligatoire`);
+    checkHttpUrl(name, url, 'l’URL', 'http://192.168.1.10:8096');
+    // URL interne facultative, utilisée par le serveur seulement (ex. un nom de conteneur Docker).
+    if (checkUrl) checkHttpUrl(name, checkUrl, 'l’URL interne', 'http://jellyfin:8096');
     if (seen.has(url)) throw new InputError(`${name} : cette URL est déjà utilisée par une autre app`);
     seen.add(url);
-    return { name, url, category };
+    return { name, url, category, ...(checkUrl && { checkUrl }) };
   });
 
   return { title, layout, apps };

@@ -16,6 +16,7 @@ Everything is configured from the browser: no config file to write, no restart n
   - **Dashboard**: key numbers, an alert banner when an app goes down, and a response-time history.
   - **Minimal**: terminal style, dense, with a keyboard shortcut for each app.
 - **Categories** to group your apps.
+- **Internal URLs**: check an app through its Docker container name (`http://jellyfin:8096`) while the link still opens its public address.
 - **Favicons are fetched automatically** from each app (`<link rel="icon">` or `/favicon.ico`). If none is found, the app's initial is shown instead.
 - **Edit protection**: none, a password, or **Discord login**, where the first Discord account to sign in becomes the owner.
 - Light and dark themes.
@@ -71,6 +72,32 @@ Everything is stored in the `/data` volume:
 ```bash
 docker compose exec homepage rm /data/config.json
 ```
+
+## Checking apps by container name
+
+Each app has two addresses:
+
+- **URL**: the address your browser opens when you click the app, for example `https://jellyfin.example.com` or `http://192.168.1.10:8096`.
+- **Internal URL** (optional): the address the server uses to check the status and fetch the icon, for example `http://jellyfin:8096`. Only signed-in admins can see it.
+
+Container names only resolve inside Docker, so the homepage container must be on the same Docker network as your apps. Uncomment the `networks` section in `docker-compose.yml`:
+
+```yaml
+services:
+  homepage:
+    # ...
+    networks:
+      - default
+      - my-network
+
+networks:
+  my-network:
+    external: true
+```
+
+Replace `my-network` with your network's name (`docker network ls` lists them). Use the container's internal port, not the port published on the host.
+
+> `localhost` does not work as an internal URL: inside the container it points to the homepage container itself.
 
 ## Status rules
 
