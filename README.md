@@ -23,7 +23,7 @@ Everything is configured from the browser: no config file to write, no restart n
 ## Install
 
 ```bash
-git clone https://github.com/<you>/forge-home.git && cd forge-home
+git clone https://github.com/thomas-bsn/forge-home.git && cd forge-home
 docker compose up -d
 ```
 
@@ -110,3 +110,7 @@ Stack: Express 5 (backend), React 19 and Vite (frontend). The only runtime depen
 - The favicon proxy (`/api/favicon?url=`) only fetches URLs of configured apps, so it cannot be used to make the server request arbitrary addresses.
 - Sessions are HMAC-signed cookies (`HttpOnly`, `SameSite=Lax`). Changing the protection mode signs everyone out.
 - Password attempts are limited to 5 per minute per IP.
+
+## License
+
+[MIT](LICENSE)
