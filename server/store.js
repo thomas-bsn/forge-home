@@ -2,7 +2,7 @@ import { readFile, writeFile, rename, mkdir, rm } from 'node:fs/promises';
 import crypto from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { withScheme } from './status.js';
+import { siteName, withScheme } from './status.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const DATA_DIR = path.resolve(process.env.DATA_DIR || path.join(ROOT, 'data'));
@@ -46,36 +46,39 @@ export async function parseSite(body) {
   if (!Array.isArray(body?.apps)) throw new InputError('La liste des apps est manquante');
   if (body.apps.length > MAX_APPS) throw new InputError(`${MAX_APPS} apps maximum`);
 
-  const checkHttpUrl = (name, url, label, example) => {
+  const checkHttpUrl = (label, url, field, example) => {
     let parsed;
     try {
       parsed = new URL(url);
     } catch {
-      throw new InputError(`${name} : ${label} est invalide (exemple : ${example})`);
+      throw new InputError(`${label} : ${field} est invalide (exemple : ${example})`);
     }
-    if (!['http:', 'https:'].includes(parsed.protocol)) throw new InputError(`${name} : ${label} doit commencer par http:// ou https://`);
+    if (!['http:', 'https:'].includes(parsed.protocol)) throw new InputError(`${label} : ${field} doit commencer par http:// ou https://`);
   };
 
-  const seen = new Set();
-  // Les URLs sans schéma sont complétées en parallèle (test https puis http) avant validation.
+  // En parallèle pour toutes les apps : schéma deviné (https puis http), puis nom du site si le nom est vide.
   const resolved = await Promise.all(
-    body.apps.map(async (a) => {
-      const url = str(a?.url, 2000);
-      const checkUrl = str(a?.checkUrl, 2000);
-      return { url: url && (await withScheme(url)), checkUrl: checkUrl && (await withScheme(checkUrl)) };
+    body.apps.map(async (a, i) => {
+      let name = str(a?.name, 80);
+      const label = name || `App n°${i + 1}`;
+      const rawUrl = str(a?.url, 2000);
+      if (!rawUrl) throw new InputError(`${label} : l’URL est obligatoire`);
+      const url = await withScheme(rawUrl);
+      checkHttpUrl(label, url, 'l’URL', 'http://192.168.1.10:8096');
+      const rawCheckUrl = str(a?.checkUrl, 2000);
+      // URL interne facultative, utilisée par le serveur seulement (ex. un nom de conteneur Docker).
+      const checkUrl = rawCheckUrl && (await withScheme(rawCheckUrl));
+      if (checkUrl) checkHttpUrl(label, checkUrl, 'l’URL interne', 'http://jellyfin:8096');
+      name ||= await siteName(checkUrl || url);
+      return { name, url, category: str(a?.category, 40), ...(checkUrl && { checkUrl }) };
     }),
   );
-  const apps = body.apps.map((a, i) => {
-    const name = str(a?.name, 80);
-    const { url, checkUrl } = resolved[i];
-    const category = str(a?.category, 40);
-    if (!name) throw new InputError(`App n°${i + 1} : le nom est obligatoire`);
-    checkHttpUrl(name, url, 'l’URL', 'http://192.168.1.10:8096');
-    // URL interne facultative, utilisée par le serveur seulement (ex. un nom de conteneur Docker).
-    if (checkUrl) checkHttpUrl(name, checkUrl, 'l’URL interne', 'http://jellyfin:8096');
-    if (seen.has(url)) throw new InputError(`${name} : cette URL est déjà utilisée par une autre app`);
-    seen.add(url);
-    return { name, url, category, ...(checkUrl && { checkUrl }) };
+
+  const seen = new Set();
+  const apps = resolved.map((app) => {
+    if (seen.has(app.url)) throw new InputError(`${app.name} : cette URL est déjà utilisée par une autre app`);
+    seen.add(app.url);
+    return app;
   });
 
   return { title, layout, apps };

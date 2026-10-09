@@ -30,8 +30,8 @@ export function initialForm(config) {
 
 // current : bloc auth de la config existante (absent au premier lancement).
 export function validateForm(form, current) {
-  const incomplete = form.apps.find((a) => !a.name.trim() || !a.url.trim());
-  if (incomplete) return 'Chaque app doit avoir un nom et une URL (ou supprime la ligne vide).';
+  const incomplete = form.apps.find((a) => !a.url.trim());
+  if (incomplete) return 'Chaque app doit avoir une URL (ou supprime la ligne vide).';
   const { auth } = form;
   if (auth.mode === 'password') {
     const keeping = current?.mode === 'password' && !auth.password;
@@ -162,7 +162,66 @@ export function LayoutSection({ form, setForm }) {
   );
 }
 
+const APP_FIELDS = ['name', 'url', 'category', 'checkUrl'];
+
+// Liste d'apps en JSON : seuls les champs remplis sont écrits.
+const appsToJson = (apps) =>
+  JSON.stringify(
+    apps.map((a) => Object.fromEntries(APP_FIELDS.filter((f) => a[f]?.trim()).map((f) => [f, a[f].trim()]))),
+    null,
+    2,
+  );
+
+// Accepte un tableau d'objets { name, url, category, checkUrl } ou de simples URLs.
+function appsFromJson(text) {
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch (err) {
+    throw new Error(`JSON invalide : ${err.message}`);
+  }
+  if (!Array.isArray(data)) throw new Error('Le JSON doit être une liste : [ { "url": "…" }, … ]');
+  return data.map((item, i) => {
+    const a = typeof item === 'string' ? { url: item } : item;
+    if (!a || typeof a !== 'object' || typeof a.url !== 'string' || !a.url.trim()) throw new Error(`Élément n°${i + 1} : "url" manquante`);
+    return { key: newKey(), ...Object.fromEntries(APP_FIELDS.map((f) => [f, typeof a[f] === 'string' ? a[f] : ''])) };
+  });
+}
+
+function JsonEditor({ apps, onApply, onClose }) {
+  const [text, setText] = useState(() => appsToJson(apps));
+  const [error, setError] = useState(null);
+
+  const apply = () => {
+    try {
+      onApply(appsFromJson(text));
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  return (
+    <div className="json-editor">
+      <textarea value={text} onChange={(e) => setText(e.target.value)} spellCheck={false} rows={12} aria-label="Apps en JSON" />
+      <small className="muted">
+        Une liste d’objets <code>{'{ "name", "url", "category", "checkUrl" }'}</code>, seule <code>url</code> est obligatoire. Une simple liste
+        d’URLs marche aussi. Appliquer remplace toutes les apps.
+      </small>
+      {error && <div className="error">{error}</div>}
+      <div className="json-actions">
+        <button type="button" className="btn btn-ghost" onClick={onClose}>
+          Annuler
+        </button>
+        <button type="button" className="btn btn-primary" onClick={apply}>
+          Appliquer
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function AppsSection({ form, setForm }) {
+  const [jsonOpen, setJsonOpen] = useState(false);
   const categories = [...new Set(form.apps.map((a) => a.category?.trim()).filter(Boolean))];
   const setApps = (fn) => setForm((f) => ({ ...f, apps: fn(f.apps) }));
   const update = (key, field, value) => setApps((apps) => apps.map((a) => (a.key === key ? { ...a, [field]: value } : a)));
@@ -182,7 +241,7 @@ export function AppsSection({ form, setForm }) {
           <div key={app.key} className="app-row">
             <label className="app-field f-name">
               <span>Nom</span>
-              <input value={app.name} onChange={(e) => update(app.key, 'name', e.target.value)} placeholder="ex. Jellyfin" maxLength={80} />
+              <input value={app.name} onChange={(e) => update(app.key, 'name', e.target.value)} placeholder="auto si vide" maxLength={80} />
             </label>
             <label className="app-field f-url">
               <span>URL (ouverte au clic)</span>
@@ -216,11 +275,27 @@ export function AppsSection({ form, setForm }) {
         ))}
       </datalist>
 
-      <button type="button" className="btn" onClick={() => setApps((apps) => [...apps, { key: newKey(), name: '', url: '', category: '', checkUrl: '' }])}>
-        + Ajouter une app
-      </button>
+      {jsonOpen ? (
+        <JsonEditor
+          apps={form.apps}
+          onClose={() => setJsonOpen(false)}
+          onApply={(apps) => {
+            setApps(() => apps);
+            setJsonOpen(false);
+          }}
+        />
+      ) : (
+        <div className="apps-buttons">
+          <button type="button" className="btn" onClick={() => setApps((apps) => [...apps, { key: newKey(), name: '', url: '', category: '', checkUrl: '' }])}>
+            + Ajouter une app
+          </button>
+          <button type="button" className="btn btn-ghost" onClick={() => setJsonOpen(true)}>
+            {'{ }'} JSON
+          </button>
+        </div>
+      )}
       <small className="muted">
-        L’<b>URL</b> est celle qu’ouvre le navigateur au clic. L’<b>URL interne</b>, facultative, sert uniquement au serveur pour vérifier le
+        Sans nom, il est repris du site lui-même à l’enregistrement. L’<b>URL</b> est celle qu’ouvre le navigateur au clic. L’<b>URL interne</b>, facultative, sert uniquement au serveur pour vérifier le
         statut et récupérer l’icône : par exemple un nom de conteneur (<code>http://jellyfin:8096</code>) si la homepage est sur le même réseau
         Docker. Les catégories regroupent les apps dans les interfaces Lanceur, Tableau de bord et Minimal.
       </small>

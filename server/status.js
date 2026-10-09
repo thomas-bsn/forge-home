@@ -120,3 +120,44 @@ export async function resolveFavicon(appUrl) {
   }
   return null;
 }
+
+// --- Nom du site -------------------------------------------------------------
+
+const ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
+
+const decodeEntities = (s) =>
+  s.replace(/&(#x[\da-f]+|#\d+|\w+);/gi, (m, e) =>
+    e[0] === '#' ? String.fromCodePoint(e[1].toLowerCase() === 'x' ? parseInt(e.slice(2), 16) : Number(e.slice(1))) : (ENTITIES[e.toLowerCase()] ?? m),
+  );
+
+const clean = (s) => decodeEntities(s).replace(/\s+/g, ' ').trim();
+
+// Repli : le premier mot du domaine (jellyfin.mondomaine.fr → Jellyfin), ou l'adresse pour une IP.
+function nameFromHost(url) {
+  const { hostname, host } = new URL(url);
+  if (/^[\d.]+$/.test(hostname) || hostname.startsWith('[')) return host;
+  const label = hostname.replace(/^www\./, '').split('.')[0];
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+// Nom d'une app saisie sans nom : og:site_name ou application-name, sinon le <title>
+// (« Tableau de bord | Grafana » → « Grafana »), sinon le domaine.
+export async function siteName(url) {
+  try {
+    const res = await timedFetch(url, { headers: { accept: 'text/html' } });
+    if (res.ok && (res.headers.get('content-type') || '').includes('html')) {
+      const head = (await res.text()).slice(0, 200_000);
+      for (const tag of head.match(/<meta\b[^>]*>/gi) ?? []) {
+        const key = (getAttr(tag, 'property') || getAttr(tag, 'name') || '').toLowerCase();
+        const content = clean(getAttr(tag, 'content') || '');
+        if (content && (key === 'og:site_name' || key === 'application-name')) return content.slice(0, 80);
+      }
+      const title = clean(head.match(/<title[^>]*>([^<]*)<\/title>/i)?.[1] || '');
+      const last = title.split(/\s+[|·•—–-]\s+/).pop();
+      if (last) return last.slice(0, 80);
+    } else {
+      res.body?.cancel().catch(() => {});
+    }
+  } catch {}
+  return nameFromHost(url);
+}

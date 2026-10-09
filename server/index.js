@@ -163,7 +163,8 @@ app.get('/api/auth/discord/callback', async (req, res) => {
     return done('error');
   }
 
-  if (!cfg.auth.ownerId) {
+  const firstOwner = !cfg.auth.ownerId;
+  if (firstOwner) {
     // Première connexion : ce compte Discord devient le propriétaire de la page.
     cfg.auth = { ...cfg.auth, ownerId: user.id, ownerName: user.name };
     await saveConfig(cfg);
@@ -171,7 +172,8 @@ app.get('/api/auth/discord/callback', async (req, res) => {
     return done('refused');
   }
   setSession(req, res, cfg.secret, `discord:${user.id}`);
-  done('ok');
+  // Fin de l'assistant : on montre la page ; une connexion via le crayon ouvre l'éditeur.
+  done(firstOwner ? 'owner' : 'ok');
 });
 
 app.get('/api/apps', async (req, res) => {

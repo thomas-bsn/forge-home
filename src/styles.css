@@ -603,6 +603,33 @@ input:focus {
   gap: 8px;
 }
 
+.apps-buttons,
+.json-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.json-actions {
+  justify-content: flex-end;
+}
+
+.json-editor {
+  display: grid;
+  gap: 8px;
+}
+
+.json-editor textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font: 0.8rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+  resize: vertical;
+}
+
 .app-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr) auto;
