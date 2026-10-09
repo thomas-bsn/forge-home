@@ -32,6 +32,26 @@ export async function checkApp(app) {
   }
 }
 
+// --- Schéma ------------------------------------------------------------------
+
+const answers = (url) =>
+  timedFetch(url, { method: 'HEAD' }).then(
+    (res) => (res.body?.cancel().catch(() => {}), true),
+    () => false,
+  );
+
+const isLocalHost = (host) => !host.includes('.') || /^[\d.]+$/.test(host) || host.startsWith('[');
+
+// URL saisie sans http:// ni https:// : on essaie https d'abord, puis http.
+// Si rien ne répond (app éteinte), on devine : http en local (IP, nom de conteneur), https sinon.
+export async function withScheme(url) {
+  if (/^[a-z][a-z\d+.-]*:\/\//i.test(url)) return url;
+  if (await answers(`https://${url}`)) return `https://${url}`;
+  if (await answers(`http://${url}`)) return `http://${url}`;
+  const host = url.split(/[/:?#]/)[0].toLowerCase();
+  return `${isLocalHost(host) ? 'http' : 'https'}://${url}`;
+}
+
 // --- Favicon -----------------------------------------------------------------
 
 function getAttr(tag, name) {

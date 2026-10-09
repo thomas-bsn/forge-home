@@ -7,15 +7,8 @@ services:
     volumes:
       - homepage-data:/data
     restart: unless-stopped
-    # To check apps by container name (e.g. http://jellyfin:8096),
-    # join the Docker network they are on:
-    # networks:
-    #   - default
-    #   - my-network
+    # Server-specific settings (port, networks…) go in docker-compose.override.yml,
+    # not here: see docker-compose.override.example.yml.
 
 volumes:
   homepage-data:
-
-# networks:
-#   my-network:
-#     external: true

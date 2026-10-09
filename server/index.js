@@ -5,6 +5,7 @@ import crypto from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { checkApp, resolveFavicon } from './status.js';
+import { CURRENT_VERSION, availableUpdate } from './update.js';
 import { DATA_DIR, FAVICON_FILE, InputError, applyFavicon, loadConfig, newSecret, parseSite, saveConfig } from './store.js';
 import {
   authIdentityChanged,
@@ -82,10 +83,17 @@ app.get('/api/config', async (req, res) => {
   res.json(publicConfig(cfg, isAdmin(req, cfg)));
 });
 
+// Nouvelle version disponible : réservé à l'admin, c'est lui qui met à jour le serveur.
+app.get('/api/update', async (req, res) => {
+  const cfg = await loadConfig();
+  if (!cfg || !isAdmin(req, cfg)) return res.sendStatus(403);
+  res.set('cache-control', 'no-store').json({ current: CURRENT_VERSION, latest: await availableUpdate() });
+});
+
 // Premier lancement uniquement : refusé dès qu'une config existe.
 app.post('/api/setup', async (req, res) => {
   if (await loadConfig()) return res.status(409).json({ error: 'La page est déjà configurée' });
-  const site = parseSite(req.body);
+  const site = await parseSite(req.body);
   const auth = await parseAuth(req.body?.auth);
   const favicon = await applyFavicon(req.body?.favicon ?? undefined, null);
   const cfg = { version: 1, ...site, favicon, auth, secret: newSecret() };
@@ -99,7 +107,7 @@ app.put('/api/config', async (req, res) => {
   if (!cfg) return res.status(409).json({ error: 'La page n’est pas encore configurée' });
   if (!isAdmin(req, cfg)) return res.status(401).json({ error: 'Connexion requise' });
 
-  const site = parseSite(req.body);
+  const site = await parseSite(req.body);
   const auth = req.body?.auth ? await parseAuth(req.body.auth, cfg.auth) : cfg.auth;
   const favicon = await applyFavicon(req.body?.favicon, cfg.favicon);
   // Changer de protection déconnecte tout le monde ; celui qui vient de définir un mot de passe reste connecté.

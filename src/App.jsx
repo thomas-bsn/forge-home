@@ -7,6 +7,7 @@ import Minimal from './layouts/Minimal.jsx';
 import Setup from './settings/Setup.jsx';
 import Editor from './settings/Editor.jsx';
 import Login from './settings/Login.jsx';
+import UpdateNotice from './UpdateNotice.jsx';
 
 const REFRESH_MS = 30_000;
 const LAYOUT_COMPONENTS = { cards: Cards, launcher: Launcher, dashboard: Dashboard, minimal: Minimal };
@@ -174,6 +175,7 @@ export default function App() {
 
   return (
     <div className={`page page-${config.layout}`}>
+      <UpdateNotice canEdit={config.canEdit} />
       {notice && (
         <div className="error notice">
           <span>{notice}</span>

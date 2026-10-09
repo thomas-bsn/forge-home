@@ -1,0 +1,23 @@
+# Your server-specific settings. Copy this file to docker-compose.override.yml:
+#   cp docker-compose.override.example.yml docker-compose.override.yml
+# Docker Compose merges it with docker-compose.yml automatically, and git ignores it,
+# so `git pull` never conflicts with your changes.
+
+services:
+  homepage:
+    # Use another port on the host:
+    # ports: !override
+    #   - "8080:3000"
+
+    # Check apps by container name (e.g. http://jellyfin:8096):
+    # networks:
+    #   - default
+    #   - my-network
+
+    # Apps with self-signed certificates:
+    # environment:
+    #   NODE_TLS_REJECT_UNAUTHORIZED: "0"
+
+# networks:
+#   my-network:
+#     external: true

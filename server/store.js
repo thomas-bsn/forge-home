@@ -2,6 +2,7 @@ import { readFile, writeFile, rename, mkdir, rm } from 'node:fs/promises';
 import crypto from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { withScheme } from './status.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const DATA_DIR = path.resolve(process.env.DATA_DIR || path.join(ROOT, 'data'));
@@ -39,7 +40,7 @@ export async function saveConfig(cfg) {
   await rename(tmp, CONFIG_FILE);
 }
 
-export function parseSite(body) {
+export async function parseSite(body) {
   const title = str(body?.title, 80) || 'Mes apps';
   const layout = LAYOUTS.includes(body?.layout) ? body.layout : 'cards';
   if (!Array.isArray(body?.apps)) throw new InputError('La liste des apps est manquante');
@@ -56,10 +57,17 @@ export function parseSite(body) {
   };
 
   const seen = new Set();
+  // Les URLs sans schéma sont complétées en parallèle (test https puis http) avant validation.
+  const resolved = await Promise.all(
+    body.apps.map(async (a) => {
+      const url = str(a?.url, 2000);
+      const checkUrl = str(a?.checkUrl, 2000);
+      return { url: url && (await withScheme(url)), checkUrl: checkUrl && (await withScheme(checkUrl)) };
+    }),
+  );
   const apps = body.apps.map((a, i) => {
     const name = str(a?.name, 80);
-    const url = str(a?.url, 2000);
-    const checkUrl = str(a?.checkUrl, 2000);
+    const { url, checkUrl } = resolved[i];
     const category = str(a?.category, 40);
     if (!name) throw new InputError(`App n°${i + 1} : le nom est obligatoire`);
     checkHttpUrl(name, url, 'l’URL', 'http://192.168.1.10:8096');

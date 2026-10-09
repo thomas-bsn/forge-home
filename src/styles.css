@@ -166,11 +166,11 @@ h1 {
   min-width: 0;
 }
 
+/* Nom trop long : retour à la ligne plutôt que des points de suspension. */
 .card-name {
   font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
 }
 
 .card-meta {
@@ -298,6 +298,66 @@ h1 {
 
 .btn-discord:hover {
   background: color-mix(in srgb, var(--discord) 85%, #000) !important;
+}
+
+/* --- Mise à jour disponible (admin) --------------------------------------------- */
+
+.update-notice {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 50;
+  width: min(340px, calc(100vw - 32px));
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--card);
+  border: 1px solid var(--accent);
+  box-shadow: var(--shadow), 0 8px 24px rgb(0 0 0 / 0.12);
+  font-size: 0.85rem;
+}
+
+.update-notice p {
+  margin: 6px 0 0;
+  color: var(--muted);
+}
+
+.update-notice a {
+  color: var(--accent);
+}
+
+.update-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: -4px -6px -4px 0;
+}
+
+.update-command {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 6px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.update-command code {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+
+.update-command:hover {
+  border-color: var(--accent);
 }
 
 .icon-btn {
@@ -928,9 +988,8 @@ small code {
   font-size: 0.85rem;
   text-align: center;
   max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
 }
 
 /* --- Interface : Tableau de bord ------------------------------------------------- */
@@ -1054,6 +1113,9 @@ small code {
 .l-dashboard .name,
 .l-dashboard .url {
   display: block;
+}
+
+.l-dashboard .url {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1061,6 +1123,8 @@ small code {
 
 .l-dashboard .name {
   font-weight: 600;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
 }
 
 .l-dashboard .url,
@@ -1188,9 +1252,9 @@ small code {
 }
 
 .l-minimal .n {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
 }
 
 .l-minimal .ms {

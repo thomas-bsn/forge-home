@@ -80,12 +80,11 @@ Each app has two addresses:
 - **URL**: the address your browser opens when you click the app, for example `https://jellyfin.example.com` or `http://192.168.1.10:8096`.
 - **Internal URL** (optional): the address the server uses to check the status and fetch the icon, for example `http://jellyfin:8096`. Only signed-in admins can see it.
 
-Container names only resolve inside Docker, so the homepage container must be on the same Docker network as your apps. Uncomment the `networks` section in `docker-compose.yml`:
+Container names only resolve inside Docker, so the homepage container must be on the same Docker network as your apps. Add the network in `docker-compose.override.yml` (see [Customizing and updating](#customizing-and-updating)):
 
 ```yaml
 services:
   homepage:
-    # ...
     networks:
       - default
       - my-network
@@ -98,6 +97,37 @@ networks:
 Replace `my-network` with your network's name (`docker network ls` lists them). Use the container's internal port, not the port published on the host.
 
 > `localhost` does not work as an internal URL: inside the container it points to the homepage container itself.
+
+## Customizing and updating
+
+Don't edit `docker-compose.yml` or the `Dockerfile` for your server: `git pull` would conflict with your changes. Put your settings in `docker-compose.override.yml` instead. Docker Compose merges it automatically, and git ignores it.
+
+```bash
+cp docker-compose.override.example.yml docker-compose.override.yml
+# then uncomment what you need: port, networks, environment variables…
+```
+
+To update to the latest version:
+
+```bash
+git pull
+docker compose up -d --build
+```
+
+Your configuration lives in the `/data` volume and is kept across updates.
+
+When a new version is released, signed-in admins see a notice in the top-left corner with a link to the changelog and the command to run. The server checks GitHub's latest release every 6 hours.
+
+To change the image itself (for example to add a company CA certificate), copy `Dockerfile` to `Dockerfile.local` (also ignored by git), edit it, and point to it in the override:
+
+```yaml
+services:
+  homepage:
+    build:
+      dockerfile: Dockerfile.local
+```
+
+If you already edited a tracked file, move your changes to the override, then run `git checkout -- docker-compose.yml Dockerfile` before pulling.
 
 ## Status rules
 
@@ -119,6 +149,8 @@ For apps that use self-signed certificates, set `NODE_TLS_REJECT_UNAUTHORIZED=0`
 |---|---|---|
 | `PORT` | `3000` | HTTP port |
 | `DATA_DIR` | `/data` in Docker, `./data` otherwise | Where the configuration is stored |
+| `UPDATE_CHECK` | `true` | Set to `false` to stop checking GitHub for new versions |
+| `UPDATE_REPO` | `thomas-bsn/forge-home` | GitHub repository checked for new releases (useful for forks) |
 
 ## Development
 
@@ -131,6 +163,8 @@ npm run build && npm start   # serves the production build on http://localhost:3
 ```
 
 Stack: Express 5 (backend), React 19 and Vite (frontend). The only runtime dependency is Express.
+
+**Publishing a release:** bump `version` in `package.json`, commit, then create a GitHub release with the matching tag (for example `v1.1.0`). Installed instances compare that tag with their own `package.json` version.
 
 ## Security notes
 
