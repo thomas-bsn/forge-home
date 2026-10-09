@@ -66,7 +66,7 @@ npm install
 npm run dev   # http://localhost:5173
 ```
 
-To publish a release: bump `version` in `package.json`, commit and push, then `gh release create vX.Y.Z --generate-notes`.
+To publish a release: `gh release create vX.Y.Z --generate-notes`. A GitHub Action then sets `version` in `package.json` to match and pushes the commit to `main`.
 
 ## License
 

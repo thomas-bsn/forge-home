@@ -1,0 +1,39 @@
+# Publier une release (ex. `gh release create v1.2.0 --generate-notes`) suffit :
+# ce workflow aligne package.json sur le tag, pousse le commit sur main et y déplace le tag.
+name: Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Aligner package.json sur le tag
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          VERSION="${TAG#v}"
+          npm version "$VERSION" --no-git-tag-version --allow-same-version
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          # Rien à commiter si la version était déjà bumpée à la main.
+          if ! git diff --quiet; then
+            git commit -am "$TAG"
+            git push origin main
+          fi
+          # Le tag doit pointer sur le commit qui contient la bonne version.
+          git tag -f "$TAG"
+          git push -f origin "$TAG"
