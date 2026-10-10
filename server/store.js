@@ -70,7 +70,8 @@ export async function parseSite(body) {
       const checkUrl = rawCheckUrl && (await withScheme(rawCheckUrl));
       if (checkUrl) checkHttpUrl(label, checkUrl, 'l’URL interne', 'http://jellyfin:8096');
       name ||= await siteName(checkUrl || url);
-      return { name, url, category: str(a?.category, 40), ...(checkUrl && { checkUrl }) };
+      const description = str(a?.description, 140).replace(/\s+/g, ' ');
+      return { name, url, category: str(a?.category, 40), ...(description && { description }), ...(checkUrl && { checkUrl }) };
     }),
   );
 

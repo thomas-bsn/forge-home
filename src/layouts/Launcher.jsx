@@ -28,7 +28,7 @@ export default function Launcher({ title, apps, summary, actions }) {
   }, []);
 
   const q = query.trim().toLowerCase();
-  const visible = q ? apps.filter((a) => a.name.toLowerCase().includes(q) || a.category?.toLowerCase().includes(q)) : apps;
+  const visible = q ? apps.filter((a) => [a.name, a.category, a.description].some((field) => field?.toLowerCase().includes(q))) : apps;
   const hour = now.getHours();
   const greeting = hour >= 5 && hour < 18 ? 'Bonjour' : 'Bonsoir';
 
@@ -79,7 +79,7 @@ export default function Launcher({ title, apps, summary, actions }) {
                   href={app.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  title={`${app.url} · ${STATUS_LABEL[status]}${app.responseTime && status !== 'down' ? ` · ${app.responseTime} ms` : ''}`}
+                  title={`${app.description ? `${app.description}\n` : ''}${app.url} · ${STATUS_LABEL[status]}${app.responseTime && status !== 'down' ? ` · ${app.responseTime} ms` : ''}`}
                 >
                   <span className="tile-icon">
                     <AppIcon app={app} />

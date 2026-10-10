@@ -108,11 +108,11 @@ export default function Dashboard({ title, apps, lastCheck, actions }) {
         {shown.map((app) => {
           const status = statusOf(app);
           return (
-            <a key={app.url} className="row" href={app.url} target="_blank" rel="noopener noreferrer">
+            <a key={app.url} className="row" href={app.url} target="_blank" rel="noopener noreferrer" title={app.description ? app.url : undefined}>
               <AppIcon app={app} />
               <span className="ellipsis">
                 <span className="name">{app.name}</span>
-                <span className="url">{app.url.replace(/^https?:\/\//, '')}</span>
+                <span className="url">{app.description || app.url.replace(/^https?:\/\//, '')}</span>
               </span>
               <span className="cat">{app.category || '–'}</span>
               <span className={`ms right ms-${status}`}>

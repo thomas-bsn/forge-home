@@ -17,7 +17,7 @@ export function initialForm(config) {
     title: config?.title ?? '',
     layout: config?.layout ?? 'cards',
     favicon: { preview: config?.favicon ?? null, change: undefined },
-    apps: (config?.apps ?? []).map((a) => ({ ...a, checkUrl: a.checkUrl ?? '', key: newKey() })),
+    apps: (config?.apps ?? []).map((a) => ({ ...a, description: a.description ?? '', checkUrl: a.checkUrl ?? '', key: newKey() })),
     auth: {
       mode: config?.auth?.mode ?? 'none',
       password: '',
@@ -52,7 +52,7 @@ export function toPayload(form) {
     title: form.title,
     layout: form.layout,
     ...(form.favicon.change !== undefined && { favicon: form.favicon.change }),
-    apps: form.apps.map(({ name, url, category, checkUrl }) => ({ name, url, category, checkUrl })),
+    apps: form.apps.map(({ name, url, category, description, checkUrl }) => ({ name, url, category, description, checkUrl })),
     auth: {
       mode: auth.mode,
       ...(auth.mode === 'password' && { password: auth.password }),
@@ -162,7 +162,7 @@ export function LayoutSection({ form, setForm }) {
   );
 }
 
-const APP_FIELDS = ['name', 'url', 'category', 'checkUrl'];
+const APP_FIELDS = ['name', 'url', 'category', 'description', 'checkUrl'];
 
 // Liste d'apps en JSON : seuls les champs remplis sont écrits.
 const appsToJson = (apps) =>
@@ -172,7 +172,7 @@ const appsToJson = (apps) =>
     2,
   );
 
-// Accepte un tableau d'objets { name, url, category, checkUrl } ou de simples URLs.
+// Accepte un tableau d'objets { name, url, category, description, checkUrl } ou de simples URLs.
 function appsFromJson(text) {
   let data;
   try {
@@ -204,7 +204,7 @@ function JsonEditor({ apps, onApply, onClose }) {
     <div className="json-editor">
       <textarea value={text} onChange={(e) => setText(e.target.value)} spellCheck={false} rows={12} aria-label="Apps en JSON" />
       <small className="muted">
-        Une liste d’objets <code>{'{ "name", "url", "category", "checkUrl" }'}</code>, seule <code>url</code> est obligatoire. Une simple liste
+        Une liste d’objets <code>{'{ "name", "url", "category", "description", "checkUrl" }'}</code>, seule <code>url</code> est obligatoire. Une simple liste
         d’URLs marche aussi. Appliquer remplace toutes les apps.
       </small>
       {error && <div className="error">{error}</div>}
@@ -251,6 +251,10 @@ export function AppsSection({ form, setForm }) {
               <span>Catégorie (facultatif)</span>
               <input value={app.category} onChange={(e) => update(app.key, 'category', e.target.value)} placeholder="ex. Médias" list="categories" maxLength={40} />
             </label>
+            <label className="app-field f-desc">
+              <span>Description (facultatif)</span>
+              <input value={app.description} onChange={(e) => update(app.key, 'description', e.target.value)} placeholder="ex. Films et séries de la maison" maxLength={140} />
+            </label>
             <label className="app-field f-check">
               <span>URL interne (facultatif)</span>
               <input value={app.checkUrl} onChange={(e) => update(app.key, 'checkUrl', e.target.value)} placeholder="ex. http://jellyfin:8096" inputMode="url" />
@@ -286,7 +290,7 @@ export function AppsSection({ form, setForm }) {
         />
       ) : (
         <div className="apps-buttons">
-          <button type="button" className="btn" onClick={() => setApps((apps) => [...apps, { key: newKey(), name: '', url: '', category: '', checkUrl: '' }])}>
+          <button type="button" className="btn" onClick={() => setApps((apps) => [...apps, { key: newKey(), name: '', url: '', category: '', description: '', checkUrl: '' }])}>
             + Ajouter une app
           </button>
           <button type="button" className="btn btn-ghost" onClick={() => setJsonOpen(true)}>
@@ -297,7 +301,7 @@ export function AppsSection({ form, setForm }) {
       <small className="muted">
         Sans nom, il est repris du site lui-même à l’enregistrement. L’<b>URL</b> est celle qu’ouvre le navigateur au clic. L’<b>URL interne</b>, facultative, sert uniquement au serveur pour vérifier le
         statut et récupérer l’icône : par exemple un nom de conteneur (<code>http://jellyfin:8096</code>) si la homepage est sur le même réseau
-        Docker. Les catégories regroupent les apps dans les interfaces Lanceur, Tableau de bord et Minimal.
+        Docker. Les catégories regroupent les apps dans les interfaces Lanceur, Tableau de bord et Minimal. La <b>description</b>, une courte phrase, s’affiche sous le nom (en infobulle dans le Lanceur).
       </small>
     </div>
   );

@@ -17,6 +17,7 @@ export default function Cards({ title, apps, summary, actions }) {
             <AppIcon app={app} className="favicon" />
             <div className="card-body">
               <div className="card-name">{app.name}</div>
+              {app.description && <div className="card-desc">{app.description}</div>}
               <div className="card-meta">{statusDetail(app)}</div>
             </div>
             <Dot status={statusOf(app)} />

@@ -173,6 +173,16 @@ h1 {
   text-wrap: balance;
 }
 
+.card-desc {
+  margin-top: 2px;
+  font-size: 0.85rem;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+
 .card-meta {
   margin-top: 2px;
   color: var(--muted);
@@ -635,7 +645,8 @@ input:focus {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr) auto;
   grid-template-areas:
     'name url actions'
-    'cat check actions';
+    'cat check actions'
+    'desc desc actions';
   gap: 8px;
   padding: 10px;
   border: 1px solid var(--border);
@@ -663,6 +674,10 @@ input:focus {
 
 .f-cat {
   grid-area: cat;
+}
+
+.f-desc {
+  grid-area: desc;
 }
 
 .f-check {
@@ -698,6 +713,7 @@ small code {
       'name actions'
       'url actions'
       'cat actions'
+      'desc actions'
       'check actions';
   }
 
@@ -1282,6 +1298,17 @@ small code {
   min-width: 0;
   overflow-wrap: anywhere;
   text-wrap: balance;
+}
+
+/* Description en commentaire, sacrifiée en premier quand la colonne est étroite. */
+.l-minimal .d {
+  flex: 1 1 0;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .l-minimal .ms {
