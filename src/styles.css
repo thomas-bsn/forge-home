@@ -839,7 +839,16 @@ small code {
 .modal > form {
   display: flex;
   flex-direction: column;
+  flex: 1 1 auto;
   min-height: 0;
+}
+
+/* Seul le corps défile : l'en-tête, les onglets et le pied gardent leur taille. */
+.modal-header,
+.tabs,
+.modal-error,
+.modal-footer {
+  flex-shrink: 0;
 }
 
 .modal-header {
@@ -855,6 +864,8 @@ small code {
 }
 
 .modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
   padding: 16px 20px 20px;
   overflow-y: auto;
 }
