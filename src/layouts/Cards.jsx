@@ -1,6 +1,6 @@
 import { AppIcon, Dot, statusDetail, statusOf } from '../apps.jsx';
 
-export default function Cards({ title, apps, summary, actions }) {
+export default function Cards({ title, apps, summary, actions, dragProps }) {
   return (
     <>
       <header className="header">
@@ -13,7 +13,7 @@ export default function Cards({ title, apps, summary, actions }) {
 
       <main className="grid">
         {apps.map((app) => (
-          <a key={app.url} className="card" href={app.url} target="_blank" rel="noopener noreferrer" title={app.url}>
+          <a key={app.url} {...dragProps(app)} className="card" href={app.url} target="_blank" rel="noopener noreferrer" title={app.url}>
             <AppIcon app={app} className="favicon" />
             <div className="card-body">
               <div className="card-name">{app.name}</div>

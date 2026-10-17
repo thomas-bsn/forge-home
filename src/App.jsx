@@ -56,6 +56,25 @@ function takeLoginResult() {
   return result;
 }
 
+// Glisser-déposer natif : l'app attrapée prend la place de celle sur laquelle on la lâche.
+function dragPropsFor(onMove) {
+  return (app) => ({
+    draggable: true,
+    onDragStart: (e) => {
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', app.url);
+    },
+    onDragOver: (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+    },
+    onDrop: (e) => {
+      e.preventDefault();
+      onMove(e.dataTransfer.getData('text/plain'), app.url);
+    },
+  });
+}
+
 function useAppStatuses(enabled) {
   const [statuses, setStatuses] = useState(null);
   const [error, setError] = useState(null);
@@ -131,6 +150,30 @@ export default function App() {
     setConfig(await api('/api/config'));
   };
 
+  // Admin : glisser une app sur une autre la place à cet endroit (et dans sa catégorie si les apps sont groupées).
+  const moveApp = async (fromUrl, toUrl) => {
+    if (fromUrl === toUrl) return;
+    const list = [...config.apps];
+    const from = list.findIndex((a) => a.url === fromUrl);
+    const to = list.findIndex((a) => a.url === toUrl);
+    if (from < 0 || to < 0) return;
+    const [moved] = list.splice(from, 1);
+    const grouped = config.layout === 'launcher' || config.layout === 'minimal';
+    const target = list[from < to ? to - 1 : to];
+    const next = { ...moved, ...(grouped && { category: target.category || '' }) };
+    if (!next.category) delete next.category;
+    list.splice(to, 0, next);
+    const previous = config;
+    setConfig({ ...config, apps: list });
+    try {
+      const body = { title: config.title, layout: config.layout, apps: list };
+      setConfig(await api('/api/config', { method: 'PUT', body }));
+    } catch (err) {
+      setConfig(previous);
+      setNotice(`Déplacement impossible : ${err.message}`);
+    }
+  };
+
   const themeButton = (
     <button onClick={toggleTheme} aria-label="Changer de thème" title="Changer de thème">
       {theme === 'dark' ? '☀' : '☾'}
@@ -200,7 +243,14 @@ export default function App() {
           </div>
         </>
       ) : (
-        <Layout title={config.title} apps={apps} summary={summary} lastCheck={lastCheck} actions={actions} />
+        <Layout
+          title={config.title}
+          apps={apps}
+          summary={summary}
+          lastCheck={lastCheck}
+          actions={actions}
+          dragProps={config.canEdit ? dragPropsFor(moveApp) : () => ({})}
+        />
       )}
 
       {modal === 'editor' && <Editor config={config} onSaved={applyConfig} onLogout={logout} onClose={() => setModal(null)} />}

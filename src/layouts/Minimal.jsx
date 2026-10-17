@@ -16,7 +16,7 @@ function assignShortcuts(apps) {
   return keys;
 }
 
-export default function Minimal({ title, apps, actions }) {
+export default function Minimal({ title, apps, actions, dragProps }) {
   const shortcuts = useMemo(() => assignShortcuts(apps), [apps]);
   const [now, setNow] = useState(() => new Date());
   const upCount = apps.filter((a) => a.status === 'up').length;
@@ -52,7 +52,7 @@ export default function Minimal({ title, apps, actions }) {
             {group.apps.map((app) => {
               const status = statusOf(app);
               return (
-                <a key={app.url} href={app.url} target="_blank" rel="noopener noreferrer" title={app.description ? `${app.description}\n${app.url}` : app.url}>
+                <a key={app.url} {...dragProps(app)} href={app.url} target="_blank" rel="noopener noreferrer" title={app.description ? `${app.description}\n${app.url}` : app.url}>
                   <span className="k">{shortcuts.get(app.url) ?? ' '}</span>
                   <span className={`st st-${status}`}>{status === 'down' ? '○' : '●'}</span>
                   <span className="n">{app.name.toLowerCase()}</span>

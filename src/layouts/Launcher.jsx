@@ -10,7 +10,7 @@ function useClock() {
   return now;
 }
 
-export default function Launcher({ title, apps, summary, actions }) {
+export default function Launcher({ title, apps, summary, actions, dragProps }) {
   const now = useClock();
   const [query, setQuery] = useState('');
   const searchRef = useRef(null);
@@ -75,6 +75,7 @@ export default function Launcher({ title, apps, summary, actions }) {
               return (
                 <a
                   key={app.url}
+                  {...dragProps(app)}
                   className={`tile ${status === 'down' ? 'is-down' : ''}`}
                   href={app.url}
                   target="_blank"

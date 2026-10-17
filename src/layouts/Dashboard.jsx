@@ -26,7 +26,7 @@ function History({ checks = [] }) {
   );
 }
 
-export default function Dashboard({ title, apps, lastCheck, actions }) {
+export default function Dashboard({ title, apps, lastCheck, actions, dragProps }) {
   const [filter, setFilter] = useState(null);
   const categories = [...new Set(apps.map((a) => a.category).filter(Boolean))];
   const down = apps.filter((a) => a.status === 'down');
@@ -108,7 +108,7 @@ export default function Dashboard({ title, apps, lastCheck, actions }) {
         {shown.map((app) => {
           const status = statusOf(app);
           return (
-            <a key={app.url} className="row" href={app.url} target="_blank" rel="noopener noreferrer" title={app.description ? app.url : undefined}>
+            <a key={app.url} {...dragProps(app)} className="row" href={app.url} target="_blank" rel="noopener noreferrer" title={app.description ? app.url : undefined}>
               <AppIcon app={app} />
               <span className="ellipsis">
                 <span className="name">{app.name}</span>
