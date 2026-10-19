@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { groupByCategory, keyboardIsFree, statusOf } from '../apps.jsx';
+import { SecretMark, groupByCategory, keyboardIsFree, statusOf } from '../apps.jsx';
 
 // Attribue à chaque app une touche unique : une lettre de son nom si possible, sinon un chiffre.
 function assignShortcuts(apps) {
@@ -55,7 +55,10 @@ export default function Minimal({ title, apps, actions, dragProps }) {
                 <a key={app.url} {...dragProps(app)} href={app.url} target="_blank" rel="noopener noreferrer" title={app.description ? `${app.description}\n${app.url}` : app.url}>
                   <span className="k">{shortcuts.get(app.url) ?? ' '}</span>
                   <span className={`st st-${status}`}>{status === 'down' ? '○' : '●'}</span>
-                  <span className="n">{app.name.toLowerCase()}</span>
+                  <span className="n">
+                    {app.name.toLowerCase()}
+                    {app.secret && <SecretMark />}
+                  </span>
                   {app.description && <span className="d"># {app.description.toLowerCase()}</span>}
                   <span className="ms">
                     {status === 'pending' ? '…' : status === 'down' ? 'down' : `${app.responseTime}ms`}

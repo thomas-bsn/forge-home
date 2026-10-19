@@ -17,7 +17,7 @@ export function initialForm(config) {
     title: config?.title ?? '',
     layout: config?.layout ?? 'cards',
     favicon: { preview: config?.favicon ?? null, change: undefined },
-    apps: (config?.apps ?? []).map((a) => ({ ...a, description: a.description ?? '', checkUrl: a.checkUrl ?? '', key: newKey() })),
+    apps: (config?.apps ?? []).map((a) => ({ ...a, description: a.description ?? '', checkUrl: a.checkUrl ?? '', secret: Boolean(a.secret), key: newKey() })),
     auth: {
       mode: config?.auth?.mode ?? 'none',
       password: '',
@@ -52,7 +52,7 @@ export function toPayload(form) {
     title: form.title,
     layout: form.layout,
     ...(form.favicon.change !== undefined && { favicon: form.favicon.change }),
-    apps: form.apps.map(({ name, url, category, description, checkUrl }) => ({ name, url, category, description, checkUrl })),
+    apps: form.apps.map(({ name, url, category, description, checkUrl, secret }) => ({ name, url, category, description, checkUrl, secret })),
     auth: {
       mode: auth.mode,
       ...(auth.mode === 'password' && { password: auth.password }),
@@ -167,7 +167,13 @@ const APP_FIELDS = ['name', 'url', 'category', 'description', 'checkUrl'];
 // Liste d'apps en JSON : seuls les champs remplis sont écrits.
 const appsToJson = (apps) =>
   JSON.stringify(
-    apps.map((a) => Object.fromEntries(APP_FIELDS.filter((f) => a[f]?.trim()).map((f) => [f, a[f].trim()]))),
+    apps.map((a) =>
+      Object.fromEntries(
+        APP_FIELDS.filter((f) => a[f]?.trim())
+          .map((f) => [f, a[f].trim()])
+          .concat(a.secret ? [['secret', true]] : []),
+      ),
+    ),
     null,
     2,
   );
@@ -184,7 +190,7 @@ function appsFromJson(text) {
   return data.map((item, i) => {
     const a = typeof item === 'string' ? { url: item } : item;
     if (!a || typeof a !== 'object' || typeof a.url !== 'string' || !a.url.trim()) throw new Error(`Élément n°${i + 1} : "url" manquante`);
-    return { key: newKey(), ...Object.fromEntries(APP_FIELDS.map((f) => [f, typeof a[f] === 'string' ? a[f] : ''])) };
+    return { key: newKey(), ...Object.fromEntries(APP_FIELDS.map((f) => [f, typeof a[f] === 'string' ? a[f] : ''])), secret: Boolean(a.secret) };
   });
 }
 
@@ -204,8 +210,8 @@ function JsonEditor({ apps, onApply, onClose }) {
     <div className="json-editor">
       <textarea value={text} onChange={(e) => setText(e.target.value)} spellCheck={false} rows={12} aria-label="Apps en JSON" />
       <small className="muted">
-        Une liste d’objets <code>{'{ "name", "url", "category", "description", "checkUrl" }'}</code>, seule <code>url</code> est obligatoire. Une simple liste
-        d’URLs marche aussi. Appliquer remplace toutes les apps.
+        Une liste d’objets <code>{'{ "name", "url", "category", "description", "checkUrl", "secret" }'}</code>, seule <code>url</code> est obligatoire. <code>secret</code> vaut <code>true</code> pour
+        cacher l’app aux visiteurs. Une simple liste d’URLs marche aussi. Appliquer remplace toutes les apps.
       </small>
       {error && <div className="error">{error}</div>}
       <div className="json-actions">
@@ -255,6 +261,10 @@ export function AppsSection({ form, setForm }) {
               <span>Description (facultatif)</span>
               <input value={app.description} onChange={(e) => update(app.key, 'description', e.target.value)} placeholder="ex. Films et séries de la maison" maxLength={140} />
             </label>
+            <label className="f-secret" title="Cachée aux visiteurs, visible seulement quand tu es connecté">
+              <input type="checkbox" checked={Boolean(app.secret)} onChange={(e) => update(app.key, 'secret', e.target.checked)} />
+              <span>🔒 Secrète (visible seulement connecté)</span>
+            </label>
             <label className="app-field f-check">
               <span>URL interne (facultatif)</span>
               <input value={app.checkUrl} onChange={(e) => update(app.key, 'checkUrl', e.target.value)} placeholder="ex. http://jellyfin:8096" inputMode="url" />
@@ -290,7 +300,7 @@ export function AppsSection({ form, setForm }) {
         />
       ) : (
         <div className="apps-buttons">
-          <button type="button" className="btn" onClick={() => setApps((apps) => [...apps, { key: newKey(), name: '', url: '', category: '', description: '', checkUrl: '' }])}>
+          <button type="button" className="btn" onClick={() => setApps((apps) => [...apps, { key: newKey(), name: '', url: '', category: '', description: '', checkUrl: '', secret: false }])}>
             + Ajouter une app
           </button>
           <button type="button" className="btn btn-ghost" onClick={() => setJsonOpen(true)}>

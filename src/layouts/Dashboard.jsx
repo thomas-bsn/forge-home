@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { AppIcon, Dot, statusOf } from '../apps.jsx';
+import { AppIcon, Dot, SecretMark, statusOf } from '../apps.jsx';
 
 const DOWN_FILTER = '__down__';
 
@@ -111,7 +111,10 @@ export default function Dashboard({ title, apps, lastCheck, actions, dragProps }
             <a key={app.url} {...dragProps(app)} className="row" href={app.url} target="_blank" rel="noopener noreferrer" title={app.description ? app.url : undefined}>
               <AppIcon app={app} />
               <span className="ellipsis">
-                <span className="name">{app.name}</span>
+                <span className="name">
+                  {app.name}
+                  {app.secret && <SecretMark />}
+                </span>
                 <span className="url">{app.description || app.url.replace(/^https?:\/\//, '')}</span>
               </span>
               <span className="cat">{app.category || '–'}</span>

@@ -36,7 +36,8 @@ function publicConfig(cfg, canEdit) {
     title: cfg.title,
     layout: cfg.layout,
     favicon: cfg.favicon ? `/api/site-favicon?v=${cfg.favicon.hash}` : null,
-    apps: canEdit ? cfg.apps : cfg.apps.map(withoutCheckUrl),
+    // Les apps secrètes ne sont montrées qu'au propriétaire connecté.
+    apps: canEdit ? cfg.apps : cfg.apps.filter((a) => !a.secret).map(withoutCheckUrl),
     auth: {
       mode: auth.mode,
       ...(auth.mode === 'discord' && { ready: Boolean(auth.ownerId) }),
@@ -178,7 +179,9 @@ app.get('/api/auth/discord/callback', async (req, res) => {
 
 app.get('/api/apps', async (req, res) => {
   const cfg = await loadConfig();
-  const apps = cfg?.apps ?? [];
+  const admin = isAdmin(req, cfg);
+  // Les statuts des apps secrètes sont calculés et gardés en mémoire pour l'admin, mais jamais renvoyés au public.
+  const apps = (cfg?.apps ?? []).filter((a) => admin || !a.secret);
   const results = await Promise.all(
     apps.map(async (a) => {
       // Le serveur vérifie l'URL interne si elle existe ; le navigateur, lui, ouvre toujours `url`.
@@ -204,6 +207,8 @@ app.get('/api/favicon', async (req, res) => {
   const cfg = await loadConfig();
   const target = cfg?.apps.find((a) => a.url === url);
   if (!target) return res.sendStatus(404);
+  // Une app secrète n'expose même pas son favicon aux visiteurs non connectés.
+  if (target.secret && !isAdmin(req, cfg)) return res.sendStatus(404);
 
   const img = await resolveFavicon(target.checkUrl || target.url);
   if (!img) return res.set('cache-control', 'public, max-age=300').sendStatus(404);

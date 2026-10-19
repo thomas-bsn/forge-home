@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { AppIcon, Dot, STATUS_LABEL, groupByCategory, keyboardIsFree, statusOf } from '../apps.jsx';
+import { AppIcon, Dot, SecretMark, STATUS_LABEL, groupByCategory, keyboardIsFree, statusOf } from '../apps.jsx';
 
 function useClock() {
   const [now, setNow] = useState(() => new Date());
@@ -86,7 +86,10 @@ export default function Launcher({ title, apps, summary, actions, dragProps }) {
                     <AppIcon app={app} />
                     <Dot status={status} />
                   </span>
-                  <span className="label">{app.name}</span>
+                  <span className="label">
+                    {app.name}
+                    {app.secret && <SecretMark />}
+                  </span>
                 </a>
               );
             })}

@@ -646,7 +646,7 @@ input:focus {
   grid-template-areas:
     'name url actions'
     'cat check actions'
-    'desc desc actions';
+    'desc secret actions';
   gap: 8px;
   padding: 10px;
   border: 1px solid var(--border);
@@ -688,6 +688,27 @@ input:focus {
   grid-area: actions;
 }
 
+.f-secret {
+  grid-area: secret;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.f-secret input {
+  accent-color: var(--text);
+}
+
+.secret-mark {
+  font-size: 0.65em;
+  margin-left: 4px;
+  vertical-align: 2px;
+  filter: grayscale(0.2);
+}
+
 small code {
   font-size: 0.95em;
 }
@@ -714,6 +735,7 @@ small code {
       'url actions'
       'cat actions'
       'desc actions'
+      'secret actions'
       'check actions';
   }
 

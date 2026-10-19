@@ -71,7 +71,9 @@ export async function parseSite(body) {
       if (checkUrl) checkHttpUrl(label, checkUrl, 'l’URL interne', 'http://jellyfin:8096');
       name ||= await siteName(checkUrl || url);
       const description = str(a?.description, 140).replace(/\s+/g, ' ');
-      return { name, url, category: str(a?.category, 40), ...(description && { description }), ...(checkUrl && { checkUrl }) };
+      // App secrète : montrée seulement quand on est connecté (jamais au public).
+      const secret = Boolean(a?.secret);
+      return { name, url, category: str(a?.category, 40), ...(description && { description }), ...(checkUrl && { checkUrl }), ...(secret && { secret: true }) };
     }),
   );
 

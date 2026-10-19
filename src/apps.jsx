@@ -54,6 +54,15 @@ export function Dot({ status, className = '' }) {
   return <span className={`dot dot-${status} ${className}`} aria-label={STATUS_LABEL[status]} title={STATUS_LABEL[status]} />;
 }
 
+// Marque discrète des apps secrètes : le propriétaire sait qu'elles sont cachées aux visiteurs.
+export function SecretMark() {
+  return (
+    <span className="secret-mark" title="App secrète : visible seulement quand on est connecté">
+      🔒
+    </span>
+  );
+}
+
 // Un raccourci clavier n'est jamais actif pendant la saisie ou quand une fenêtre est ouverte.
 export function keyboardIsFree(event) {
   if (event.ctrlKey || event.metaKey || event.altKey) return false;
